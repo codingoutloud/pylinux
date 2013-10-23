@@ -1,15 +1,14 @@
 import os, platform, base64
 from azure.storage import *
+from blast_config import *
+from azure_config import *
 
 plat = platform.system()
 print("Platform == " + plat)
 
-#database_root_path = os.sep + "blastdb"
-#database_root_path = os.path.join("d:", database_root_path)
-database_root_path = "/home/azureuser/BLAST/blastdb"
 print('database_root_path = %s' % database_root_path)
 
-blob_service = BlobService(account_name='blastfileseu', account_key='xkTjP5IRpkcqlhDve95latLJIAljQmtE93cT4nidnRUJA8YRJctjFTV7gX7bYGCkGUbnD3GooMx7kUPqxbyX6Q==')
+blob_service = BlobService(account_name=azure_storage_account_name, account_key=azure_storage_account_key)
 blob_container_names = ['inputncbi', 'ncbi']
 blob_chunk_size = 4 * 1024 * 1024
 
@@ -56,6 +55,8 @@ def download_if_needed(blob_container_name, blob, directory_path):
             download_small_blob(blob_service, blob_container_name, blob.name, file_path)
         else:
             download_large_blob(blob_service, blob_container_name, blob.name, file_path)
+    else:
+        print(' ... skipping download of %d byte %s -- local copy found' % (expected_size, file_path))
 
 def download_blast_database(blob_service, database_root_path):
     make_sure_path_exists(database_root_path)
@@ -67,9 +68,9 @@ def download_blast_database(blob_service, database_root_path):
         print(blob_container_name)
         blobs = blob_service.list_blobs(blob_container_name)
         for blob in blobs:
-            print("%d bytes at %s" % (blob.properties.content_length, blob.url))
             download_if_needed(blob_container_name, blob, directory_path)
 
-download_blast_database(blob_service, database_root_path)
-
+def make_sure_blast_database_is_downloaded():
+    download_blast_database(blob_service, database_root_path)
+    
 
